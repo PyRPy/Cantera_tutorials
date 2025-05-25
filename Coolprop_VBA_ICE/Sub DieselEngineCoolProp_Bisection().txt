@@ -1,0 +1,111 @@
+Declare PtrSafe Function PropsSI Lib "CoolProp_x64.dll" _
+    (ByVal Output As String, ByVal Name1 As String, ByVal Prop1 As Double, _
+     ByVal Name2 As String, ByVal Prop2 As Double, ByVal Fluid As String) As Double
+
+Sub DieselEngineCoolProp_Bisection()
+    Dim P1 As Double, T1 As Double, V1 As Double
+    Dim P2 As Double, T2 As Double, V2 As Double
+    Dim P3 As Double, T3 As Double, V3 As Double
+    Dim P4 As Double, T4 As Double, V4 As Double
+    Dim s1 As Double, s3 As Double, h2 As Double
+    Dim r As Double, Q_in As Double
+    Dim R_air As Double, mass As Double
+    
+    ' Constants
+    r = 18
+    Q_in = 450000       ' J/kg
+    R_air = 287.05      ' J/kg.K
+    mass = 1
+    
+    ' Initial state
+    P1 = 101325         ' Pa
+    T1 = 300            ' K
+    V1 = R_air * T1 / P1
+    
+    ' State 1 entropy
+    s1 = PropsSI("S", "P", P1, "T", T1, "Air")
+    
+    ' Compression stroke (isentropic compression)
+    V2 = V1 / r
+    
+    ' Bisection method to find T2
+    Dim T_low As Double, T_high As Double, T_mid As Double
+    Dim s_mid As Double, P_mid As Double
+    T_low = T1
+    T_high = 1500
+    Do
+        T_mid = (T_low + T_high) / 2
+        P_mid = mass * R_air * T_mid / V2
+        s_mid = PropsSI("S", "P", P_mid, "T", T_mid, "Air")
+        
+        If s_mid > s1 Then
+            T_high = T_mid
+        Else
+            T_low = T_mid
+        End If
+    Loop While Abs(s_mid - s1) > 0.01
+    
+    T2 = T_mid
+    P2 = mass * R_air * T2 / V2
+    
+    ' Combustion stroke (constant pressure heat addition)
+    P3 = P2
+    h2 = PropsSI("H", "P", P2, "T", T2, "Air")
+    Dim h3 As Double
+    h3 = h2 + Q_in
+    T3 = PropsSI("T", "P", P3, "H", h3, "Air")
+    V3 = mass * R_air * T3 / P3
+    
+    ' Expansion stroke (isentropic expansion to V4 = V1)
+    V4 = V1
+    s3 = PropsSI("S", "P", P3, "T", T3, "Air")
+    
+    ' Bisection method to find T4
+    T_low = 300
+    T_high = T3
+    Dim s4_guess As Double
+    Do
+        T_mid = (T_low + T_high) / 2
+        P_mid = mass * R_air * T_mid / V4
+        s4_guess = PropsSI("S", "P", P_mid, "T", T_mid, "Air")
+        
+        If s4_guess > s3 Then
+            T_high = T_mid
+        Else
+            T_low = T_mid
+        End If
+    Loop While Abs(s4_guess - s3) > 0.01
+    
+    T4 = T_mid
+    P4 = mass * R_air * T4 / V4
+    
+    ' Output results
+    With ThisWorkbook.Sheets("Sheet1")
+        .Cells(2, 1).Value = "State"
+        .Cells(2, 2).Value = "T (K)"
+        .Cells(2, 3).Value = "P (Pa)"
+        .Cells(2, 4).Value = "V (m³/kg)"
+        
+        .Cells(3, 1).Value = "1"
+        .Cells(3, 2).Value = T1
+        .Cells(3, 3).Value = P1
+        .Cells(3, 4).Value = V1
+        
+        .Cells(4, 1).Value = "2"
+        .Cells(4, 2).Value = T2
+        .Cells(4, 3).Value = P2
+        .Cells(4, 4).Value = V2
+        
+        .Cells(5, 1).Value = "3"
+        .Cells(5, 2).Value = T3
+        .Cells(5, 3).Value = P3
+        .Cells(5, 4).Value = V3
+        
+        .Cells(6, 1).Value = "4"
+        .Cells(6, 2).Value = T4
+        .Cells(6, 3).Value = P4
+        .Cells(6, 4).Value = V4
+    End With
+    
+    MsgBox "Diesel cycle (with real air properties) simulation complete!"
+End Sub

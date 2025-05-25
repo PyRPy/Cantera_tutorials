@@ -1,0 +1,63 @@
+Sub DieselEngineSimulation()
+    Dim T1 As Double, P1 As Double, V1 As Double
+    Dim T2 As Double, P2 As Double, V2 As Double
+    Dim T3 As Double, P3 As Double, V3 As Double
+    Dim T4 As Double, P4 As Double, V4 As Double
+    Dim gamma As Double, r As Double
+    Dim Q_in As Double
+
+    ' Example values
+    P1 = 101325    ' Pa, ambient pressure
+    T1 = 300       ' K, ambient temperature
+    r = 18         ' Compression ratio
+    gamma = 1.4    ' For air
+    Q_in = 450000  ' J/kg, approximate heat release
+
+    ' Compression stroke (adiabatic compression)
+    V1 = 1         ' Reference volume
+    V2 = V1 / r
+
+    T2 = T1 * (V1 / V2) ^ (gamma - 1)
+    P2 = P1 * (V1 / V2) ^ gamma
+
+    ' Combustion stroke (constant pressure combustion)
+    T3 = T2 + Q_in / (1005)  ' Cp ~ 1005 J/kg.K for air
+    P3 = P2 * T3 / T2
+
+    ' Expansion stroke (adiabatic expansion)
+    V3 = V2 * T3 / T2
+    V4 = V1
+
+    T4 = T3 * (V3 / V4) ^ (1 - gamma)
+    P4 = P3 * (V3 / V4) ^ gamma
+
+    ' Output to Excel
+    With ThisWorkbook.Sheets("Sheet1")
+        .Cells(2, 1).Value = "State"
+        .Cells(2, 2).Value = "T (K)"
+        .Cells(2, 3).Value = "P (Pa)"
+        .Cells(2, 4).Value = "V (relative)"
+
+        .Cells(3, 1).Value = "1"
+        .Cells(3, 2).Value = T1
+        .Cells(3, 3).Value = P1
+        .Cells(3, 4).Value = V1
+
+        .Cells(4, 1).Value = "2"
+        .Cells(4, 2).Value = T2
+        .Cells(4, 3).Value = P2
+        .Cells(4, 4).Value = V2
+
+        .Cells(5, 1).Value = "3"
+        .Cells(5, 2).Value = T3
+        .Cells(5, 3).Value = P3
+        .Cells(5, 4).Value = V3
+
+        .Cells(6, 1).Value = "4"
+        .Cells(6, 2).Value = T4
+        .Cells(6, 3).Value = P4
+        .Cells(6, 4).Value = V4
+    End With
+
+    MsgBox "Diesel cycle simulation completed!"
+End Sub
