@@ -1,0 +1,116 @@
+Sub DieselCycle_PVPlot()
+    ' Constants
+    Dim r As Double, Q_in As Double, R_air As Double
+    Dim P1 As Double, T1 As Double, V1 As Double
+    Dim P2 As Double, T2 As Double, V2 As Double
+    Dim P3 As Double, T3 As Double, V3 As Double
+    Dim P4 As Double, T4 As Double, V4 As Double
+    Dim cp As Double, cv As Double, gamma As Double
+    Dim mass As Double
+    
+    ' Diesel cycle parameters
+    r = 18
+    Q_in = 450000        ' J/kg
+    R_air = 287.05       ' J/kg.K
+    mass = 1
+    
+    ' Air specific heats
+    cp = 1005
+    cv = 718
+    gamma = cp / cv
+    
+    ' State 1
+    P1 = 101325          ' Pa
+    T1 = 300             ' K
+    V1 = R_air * T1 / P1
+    
+    ' State 2 (isentropic compression)
+    V2 = V1 / r
+    T2 = T1 * (V1 / V2) ^ (gamma - 1)
+    P2 = mass * R_air * T2 / V2
+    
+    ' State 3 (constant pressure combustion)
+    P3 = P2
+    Dim c_v As Double
+    c_v = cv
+    T3 = T2 + Q_in / c_v
+    V3 = mass * R_air * T3 / P3
+    
+    ' State 4 (isentropic expansion to V1)
+    V4 = V1
+    T4 = T3 * (V3 / V4) ^ (1 - gamma)
+    P4 = mass * R_air * T4 / V4
+    
+    ' Output 4 states to Sheet1
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets("Sheet1")
+    ws.Range("E1:H5").ClearContents
+    ws.Range("E1").Value = "State"
+    ws.Range("F1").Value = "P (Pa)"
+    ws.Range("G1").Value = "V (m³/kg)"
+    ws.Range("H1").Value = "T (K)"
+    
+    ws.Range("E2:H2").Value = Array("1", P1, V1, T1)
+    ws.Range("E3:H3").Value = Array("2", P2, V2, T2)
+    ws.Range("E4:H4").Value = Array("3", P3, V3, T3)
+    ws.Range("E5:H5").Value = Array("4", P4, V4, T4)
+    
+    ' Generate smooth P-V curve data
+    Dim i As Integer, n As Integer
+    Dim V As Double, P As Double
+    Dim row As Integer
+    row = 2
+    n = 20 ' points per process
+    
+    ' Clear previous P-V data
+    ws.Range("A1:B100").ClearContents
+    ws.Range("A1").Value = "V (m³/kg)"
+    ws.Range("B1").Value = "P (Pa)"
+    
+    ' Process 1-2 (isentropic compression)
+    For i = 0 To n
+        V = V1 - i * (V1 - V2) / n
+        P = P1 * (V1 / V) ^ gamma
+        ws.Cells(row, 1).Value = V
+        ws.Cells(row, 2).Value = P
+        row = row + 1
+    Next i
+    
+    ' Process 2-3 (constant pressure combustion)
+    For i = 1 To n
+        V = V2 + i * (V3 - V2) / n
+        P = P2
+        ws.Cells(row, 1).Value = V
+        ws.Cells(row, 2).Value = P
+        row = row + 1
+    Next i
+    
+    ' Process 3-4 (isentropic expansion)
+    For i = 1 To n
+        V = V3 + i * (V4 - V3) / n
+        P = P3 * (V3 / V) ^ gamma
+        ws.Cells(row, 1).Value = V
+        ws.Cells(row, 2).Value = P
+        row = row + 1
+    Next i
+    
+    ' Process 4-1 (constant volume exhaust blowdown – not typically shown)
+    ' Optionally skip this for a classic Diesel cycle (3-4-1 direct return)
+    
+    ' Plot P-V diagram
+    Dim chartObj As ChartObject
+    Set chartObj = ws.ChartObjects.Add(Left:=300, Width:=400, Top:=10, Height:=300)
+    
+    With chartObj.Chart
+        .ChartType = xlXYScatterSmooth
+        .SetSourceData Source:=ws.Range("A1:B" & row - 1)
+        .HasTitle = True
+        .ChartTitle.Text = "Diesel Cycle P-V Diagram"
+        .Axes(xlCategory).HasTitle = True
+        .Axes(xlCategory).AxisTitle.Text = "Volume (m³/kg)"
+        .Axes(xlValue).HasTitle = True
+        .Axes(xlValue).AxisTitle.Text = "Pressure (Pa)"
+    End With
+    
+    MsgBox "Diesel cycle P-V diagram plotted successfully!"
+End Sub

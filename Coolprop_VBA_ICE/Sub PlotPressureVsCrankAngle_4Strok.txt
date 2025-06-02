@@ -1,0 +1,96 @@
+Sub PlotPressureVsCrankAngle_4Strokes_Fixed()
+    ' Constants
+    Dim gamma As Double, P0 As Double, Vc As Double, Vd As Double, rc As Double
+    Dim theta As Double, V As Double, P As Double
+    Dim i As Integer, row As Integer
+    
+    gamma = 1.4
+    P0 = 101325
+    rc = 18
+    Vd = 0.0005 ' m³/kg
+    Vc = Vd / (rc - 1)
+    
+    ' Clear sheet
+    Dim ws As Worksheet
+    Set ws = Sheets("Sheet1")
+    ws.Cells.ClearContents
+    ws.Range("A1").Value = "Crank Angle (°)"
+    ws.Range("B1").Value = "Pressure (Pa)"
+    ws.Range("C1").Value = "Stroke"
+    
+    row = 2
+    For i = 0 To 720
+        theta = i
+        V = Vc + 0.5 * Vd * (1 - Cos(Application.WorksheetFunction.Radians(theta)))
+        Dim stroke As String
+        
+        If theta < 180 Then
+            P = P0
+            stroke = "Intake"
+        ElseIf theta < 360 Then
+            P = P0 * (Vc + Vd) ^ gamma / V ^ gamma
+            stroke = "Compression"
+        ElseIf theta < 540 Then
+            P = 6 * P0 * Vc ^ gamma / V ^ gamma
+            stroke = "Expansion"
+        Else
+            P = P0
+            stroke = "Exhaust"
+        End If
+        
+        ws.Cells(row, 1).Value = theta
+        ws.Cells(row, 2).Value = P
+        ws.Cells(row, 3).Value = stroke
+        row = row + 1
+    Next i
+    
+    ' Plot
+    Dim chartObj As ChartObject
+    Set chartObj = ws.ChartObjects.Add(Left:=300, Width:=500, Top:=10, Height:=300)
+    Dim cht As Chart
+    Set cht = chartObj.Chart
+    cht.ChartType = xlXYScatterLines
+    
+    Dim strokeNames As Variant
+    strokeNames = Array("Intake", "Compression", "Expansion", "Exhaust")
+    
+    Dim colors As Variant
+    colors = Array(RGB(0, 128, 0), RGB(0, 0, 255), RGB(255, 0, 0), RGB(0, 0, 0)) ' green, blue, red, black
+    
+    Dim s As Integer
+    For s = LBound(strokeNames) To UBound(strokeNames)
+        ws.Range("A1:C" & row - 1).AutoFilter Field:=3, Criteria1:=strokeNames(s)
+        Dim rngX As Range, rngY As Range
+        On Error Resume Next
+        Set rngX = ws.Range("A2:A" & row - 1).SpecialCells(xlCellTypeVisible)
+        Set rngY = ws.Range("B2:B" & row - 1).SpecialCells(xlCellTypeVisible)
+        On Error GoTo 0
+        
+        If Not rngX Is Nothing Then
+            Dim seriesObj As Series
+            Set seriesObj = cht.SeriesCollection.NewSeries
+            With seriesObj
+                .Name = strokeNames(s)
+                .XValues = rngX
+                .Values = rngY
+                .Format.Line.ForeColor.RGB = colors(s)
+                .MarkerStyle = xlMarkerStyleCircle
+                .MarkerSize = 5
+            End With
+        End If
+    Next s
+    
+    ws.AutoFilterMode = False
+    
+    With cht
+        .HasTitle = True
+        .ChartTitle.Text = "Pressure vs. Crank Angle (4-Stroke Diesel)"
+        .Axes(xlCategory).HasTitle = True
+        .Axes(xlCategory).AxisTitle.Text = "Crank Angle (°)"
+        .Axes(xlValue).HasTitle = True
+        .Axes(xlValue).AxisTitle.Text = "Pressure (Pa)"
+        .Legend.Position = xlLegendPositionBottom
+    End With
+    
+    MsgBox "Diagram created successfully with different colors!"
+End Sub

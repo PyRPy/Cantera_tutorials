@@ -1,0 +1,50 @@
+Sub PlotWiebeFunction()
+    ' Parameters
+    Dim a As Double, m As Double
+    Dim theta_0 As Double, delta_theta As Double
+    Dim theta As Double, theta_end As Double
+    Dim x As Double
+    Dim i As Integer
+    
+    ' Wiebe function parameters
+    a = 6             ' Efficiency factor
+    m = 2             ' Shape factor
+    theta_0 = -10     ' Start of combustion (°CA)
+    delta_theta = 40  ' Combustion duration (°CA)
+    theta_end = theta_0 + delta_theta
+    
+    ' Clear previous data
+    With ThisWorkbook.Sheets("Sheet1")
+        .Range("A1:B100").ClearContents
+        .Range("A1").Value = "Crank Angle (°CA)"
+        .Range("B1").Value = "MFB"
+    End With
+    
+    ' Calculate Wiebe function
+    i = 2
+    For theta = theta_0 To theta_end Step 1
+        x = 1 - Exp(-a * ((theta - theta_0) / delta_theta) ^ (m + 1))
+        With ThisWorkbook.Sheets("Sheet1")
+            .Cells(i, 1).Value = theta
+            .Cells(i, 2).Value = x
+        End With
+        i = i + 1
+    Next theta
+    
+    ' Plot the Wiebe function
+    Dim chartObj As ChartObject
+    Set chartObj = ThisWorkbook.Sheets("Sheet1").ChartObjects.Add(Left:=300, Width:=400, Top:=10, Height:=300)
+    
+    With chartObj.Chart
+        .ChartType = xlXYScatterSmooth
+        .SetSourceData Source:=ThisWorkbook.Sheets("Sheet1").Range("A1:B" & i - 1)
+        .HasTitle = True
+        .ChartTitle.Text = "Wiebe Function (MFB)"
+        .Axes(xlCategory).HasTitle = True
+        .Axes(xlCategory).AxisTitle.Text = "Crank Angle (°CA)"
+        .Axes(xlValue).HasTitle = True
+        .Axes(xlValue).AxisTitle.Text = "MFB"
+    End With
+    
+    MsgBox "Wiebe function plotted successfully!"
+End Sub
