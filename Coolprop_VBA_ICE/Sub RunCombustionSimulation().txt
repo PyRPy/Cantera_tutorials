@@ -1,0 +1,43 @@
+Function EstimateNOx(T_flame As Double) As Double
+    ' T_flame in Kelvin
+    Dim NOx_ppm As Double
+    NOx_ppm = 0.000000001 * Exp(0.001 * (T_flame - 1500)) * 1000000# ' crude exponential fit
+    EstimateNOx = NOx_ppm ' in ppm
+End Function
+
+Function EstimateCO(lambda As Double) As Double
+    Dim CO_ppm As Double
+    If lambda < 1 Then
+        CO_ppm = 10000 * (1 - lambda)
+    Else
+        CO_ppm = 50 / lambda ' small tail for lean combustion
+    End If
+    EstimateCO = CO_ppm
+End Function
+
+Sub RunCombustionSimulation()
+
+    Dim T_air As Double: T_air = 300   ' K
+    Dim cp_air As Double: cp_air = 1005 ' J/kg-K (approx)
+    Dim m_air As Double: m_air = 1#    ' kg
+    Dim m_fuel As Double: m_fuel = 0.05 ' kg
+    Dim LHV As Double: LHV = 43000000  ' J/kg for diesel
+
+    Dim Q_release As Double
+    Q_release = m_fuel * LHV
+
+    Dim T_flame As Double
+    T_flame = T_air + Q_release / (m_air * cp_air)
+
+    Dim NOx_ppm As Double
+    NOx_ppm = EstimateNOx(T_flame)
+
+    Dim lambda As Double: lambda = 1.1 ' example value
+    Dim CO_ppm As Double
+    CO_ppm = EstimateCO(lambda)
+
+    MsgBox "T_flame = " & T_flame & " K" & vbCrLf & _
+           "NOx ˜ " & NOx_ppm & " ppm" & vbCrLf & _
+           "CO ˜ " & CO_ppm & " ppm"
+
+End Sub
