@@ -1,0 +1,38 @@
+'Open Excel → Alt + F11 → Insert → Module → Paste:
+'calculate the NO concentrations using experimental or empirical method in VBA
+
+Function NOx_Exponential(Tmax As Double, tau As Double) As Double
+    ' Constants
+    Const C As Double = 1.8E+09     ' Pre-exponential factor [mol/(m^3·s)]
+    Const Ea As Double = 71400      ' Activation energy [J/mol]
+    Const R As Double = 8.314       ' Gas constant [J/mol·K]
+
+    Dim exponent As Double
+    Dim xNO As Double
+
+    If Tmax <= 0 Or tau <= 0 Then
+        NOx_Exponential = 0
+        Exit Function
+    End If
+
+    exponent = -Ea / (R * Tmax)
+    xNO = C * tau * Exp(exponent)
+
+    NOx_Exponential = xNO   ' mol/m^3
+End Function
+
+'Then =NOx_Exponential(A2,B2) will give you estimated NO concentration in mol/m³.
+'To Convert mol/m³ to ppm:
+Function NOx_ppm(xNO As Double, T As Double, P As Double) As Double
+    Const R As Double = 8.314  ' J/mol·K
+
+    ' xNO in mol/m³, T in K, P in Pa
+    If T <= 0 Or P <= 0 Then
+        NOx_ppm = 0
+        Exit Function
+    End If
+
+    NOx_ppm = xNO * R * T / P * 1E6
+End Function
+
+'=NOx_ppm(D2, A2, 101325)
