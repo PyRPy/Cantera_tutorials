@@ -1,0 +1,55 @@
+Sub SimulateAirRelease()
+
+    ' --- Constants ---
+    Const V As Double = 1                 ' Bottle volume (m³)
+    Const P0_bar As Double = 20 + 1.01325 ' Initial absolute pressure (bar)
+    Const P_min_bar As Double = 15 + 1.01325 ' Stop when pressure hits 25 bar(g)
+    Const Patm_bar As Double = 1.01325    ' Atmospheric pressure (bar)
+    Const T As Double = 293.15            ' Constant temperature (K)
+    Const R As Double = 287               ' Gas constant for air (J/kg·K)
+    Const gamma As Double = 1.4           ' Specific heat ratio for air
+
+    Const Cd As Double = 0.7              ' Discharge coefficient
+    Const d_mm As Double = 5              ' Orifice diameter in mm
+    Const dt As Double = 0.1              ' Time step (s)
+
+    Dim A As Double
+    A = WorksheetFunction.Pi() * (d_mm / 1000) ^ 2 / 4 ' Area in m²
+
+    ' Initial mass
+    Dim P_Pa As Double: P_Pa = P0_bar * 1E5
+    Dim m As Double: m = (P_Pa * V) / (R * T)
+
+    ' Setup output
+    Dim t As Double: t = 0
+    Dim i As Long: i = 1
+    Dim ws As Worksheet
+    Set ws = Sheets.Add: ws.Name = "DynamicAirRelease"
+
+    ws.Range("A1:D1").Value = Array("Time (s)", "Pressure (bar)", "Mass (kg)", "Mass Flow Rate (kg/s)")
+
+    ' Loop
+    Do While P_Pa > P_min_bar * 1E5
+        ' Choked flow mass flow rate
+        Dim mdot As Double
+        mdot = Cd * A * P_Pa * Sqr((gamma / (R * T)) * ((2 / (gamma + 1)) ^ ((gamma + 1) / (gamma - 1))))
+
+        ' Update mass and pressure
+        m = m - mdot * dt
+        If m <= 0 Then Exit Do
+        P_Pa = (m * R * T) / V
+
+        ' Write to sheet
+        ws.Cells(i + 1, 1).Value = t
+        ws.Cells(i + 1, 2).Value = P_Pa / 1E5
+        ws.Cells(i + 1, 3).Value = m
+        ws.Cells(i + 1, 4).Value = mdot
+
+        ' Increment time
+        t = t + dt
+        i = i + 1
+    Loop
+
+    MsgBox "Simulation complete. Duration: " & Format(t, "0.0") & " seconds", vbInformation
+
+End Sub

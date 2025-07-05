@@ -1,0 +1,34 @@
+Sub CalculateAirReleased()
+
+    ' Constants
+    Const V_m3 As Double = 1           ' Volume of air bottle in m³
+    Const P1_gauge As Double = 20      ' Initial pressure in bar(g)
+    Const P2_gauge As Double = 15      ' Final pressure in bar(g)
+    Const Patm As Double = 1.01325     ' Atmospheric pressure in bar
+    Const R As Double = 287            ' Specific gas constant for air [J/kg·K]
+    Const T As Double = 293.15         ' Assumed temperature in K (20°C)
+
+    ' Convert gauge to absolute pressure (in bar), then to Pascals
+    Dim P1_abs As Double, P2_abs As Double
+    P1_abs = (P1_gauge + Patm) * 1E5   ' Convert to Pascals
+    P2_abs = (P2_gauge + Patm) * 1E5   ' Convert to Pascals
+
+    ' Calculate mass of air using ideal gas law: m = (P * V) / (R * T)
+    Dim m1 As Double, m2 As Double, m_released As Double
+    m1 = (P1_abs * V_m3) / (R * T)
+    m2 = (P2_abs * V_m3) / (R * T)
+    m_released = m1 - m2
+
+    ' Output results to worksheet
+    With Sheets(1)
+        .Range("A1").Value = "Initial Mass (kg)"
+        .Range("B1").Value = m1
+        .Range("A2").Value = "Final Mass (kg)"
+        .Range("B2").Value = m2
+        .Range("A3").Value = "Released Mass (kg)"
+        .Range("B3").Value = m_released
+    End With
+
+    MsgBox "Calculation completed! Released mass of air: " & Format(m_released, "0.000") & " kg", vbInformation
+
+End Sub
