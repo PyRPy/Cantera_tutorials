@@ -1,0 +1,32 @@
+Sub CalculateDieselEnginePower()
+    ' Input parameters
+    Dim P_imep As Double     ' Pa
+    Dim Vd As Double         ' m³
+    Dim RPM As Double
+    Dim n_cyl As Integer
+    Dim eta_mech As Double   ' 0~1
+    
+    ' Example values
+    P_imep = 800000          ' 800 kPa = 8 bar mean pressure
+    Vd = 0.0005              ' 500 cm³ per cylinder
+    RPM = 3000               ' revolutions per minute
+    n_cyl = 4                ' 4 cylinders
+    eta_mech = 0.85          ' 85% mechanical efficiency
+    
+    ' Convert engine speed to cycles per second
+    Dim N_cycles As Double
+    N_cycles = RPM / 2       ' 2 revolutions per power stroke
+    
+    ' Indicated power in watts
+    Dim P_indicated As Double
+    P_indicated = (P_imep * Vd * N_cycles * n_cyl) / 60
+    
+    ' Brake power
+    Dim P_brake As Double
+    P_brake = P_indicated * eta_mech
+    
+    ' Output
+    Debug.Print "Indicated Power (W): " & P_indicated
+    Debug.Print "Brake Power (W): " & P_brake
+    Debug.Print "Brake Power (HP): " & P_brake / 745.7
+End Sub
